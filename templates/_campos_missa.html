@@ -1,0 +1,44 @@
+<div class="grade-campos">
+  <label class="campo-largo">Nome da celebração
+    <input type="text" name="nome" maxlength="80" required value="{{ v.nome }}" placeholder="Ex.: Missa dominical">
+  </label>
+  <label>Data
+    <input type="date" name="data" required value="{{ v.data }}" {% if min_data %}min="{{ min_data }}"{% endif %}>
+  </label>
+  <label>Hora
+    <input type="time" name="hora" required value="{{ v.hora }}">
+  </label>
+  <label>Quantidade de cerimoniários
+    <input type="number" name="quantidade" min="1" max="30" required value="{{ v.quantidade }}">
+  </label>
+</div>
+
+<fieldset class="grupo">
+  <legend>Quem está disponível</legend>
+  <div class="acoes-linha">
+    <button type="button" class="btn btn-pequeno btn-contorno" data-marcar="todos">Marcar todos</button>
+    <button type="button" class="btn btn-pequeno btn-contorno" data-marcar="nenhum">Limpar</button>
+    <span class="suave" id="contador-disp"></span>
+  </div>
+  <div class="disponiveis">
+    {% for c in cerimoniarios %}
+      <label class="pessoa-check">
+        <input type="checkbox" name="disponiveis" value="{{ c.id }}" {% if c.id in v.disponiveis %}checked{% endif %}>
+        <img src="{{ url_for('foto', nome=c.foto) if c.foto else url_for('static', filename='img/logo.jpg') }}" alt="" width="40" height="40" loading="lazy">
+        <span>{{ c.nome }}</span>
+      </label>
+    {% endfor %}
+  </div>
+</fieldset>
+
+<fieldset class="grupo">
+  <legend>Funções do sorteio</legend>
+  <p class="suave">As quatro primeiras já vêm preenchidas e podem ser editadas ou apagadas. Use os dois últimos campos para criar funções personalizadas.</p>
+  <div class="grade-funcoes">
+    {% for f in v.funcoes %}
+      <input type="text" name="funcao_{{ loop.index }}" maxlength="30" value="{{ f }}"
+             aria-label="Função {{ loop.index }}"
+             {% if loop.index > 4 %}placeholder="Função personalizada {{ loop.index - 4 }}"{% endif %}>
+    {% endfor %}
+  </div>
+</fieldset>

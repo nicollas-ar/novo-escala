@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Entrar — Escala cerimoniarios do Limão{% endblock %}
+{% block conteudo %}
+<section class="caixa caixa-estreita">
+  <h1>Área do coordenador</h1>
+  <form method="post" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Usuário
+      <input type="text" name="usuario" autocomplete="username" required autofocus>
+    </label>
+    <label>Senha
+      <input type="password" name="senha" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="btn btn-verde">Entrar</button>
+  </form>
+</section>
+{% endblock %}

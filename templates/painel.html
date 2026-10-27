@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titulo %}Painel — Escala cerimoniarios do Limão{% endblock %}
+{% block classe_main %}estreito{% endblock %}
+{% block conteudo %}
+{% if not proximas %}
+  <section class="vazio">
+    <p>Nenhuma missa marcada por enquanto.</p>
+    <p class="suave">Use “Add missa” no topo para sortear a próxima escala.</p>
+  </section>
+{% endif %}
+
+<div class="lista-missas">
+  {% for m in proximas %}
+    <article class="missa">
+      <h2>{{ m.nome }}</h2>
+
+      {% set equipe = escalas[m.id] %}
+      {% if equipe %}
+        <ul class="equipe">
+          {% for e in equipe %}
+            <li>
+              <img class="foto" src="{{ url_for('foto', nome=e.foto) if e.foto else url_for('static', filename='img/logo.jpg') }}"
+                   alt="Foto de {{ e.nome }}" loading="lazy" width="76" height="76">
+              <div class="pessoa">
+                <strong>{{ e.nome }}</strong>
+                <span class="funcao">{{ e.funcao }}</span>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="suave sem-escala">Esta missa não tem escala.</p>
+      {% endif %}
+
+      <footer class="missa-rodape">
+        <span class="quando">{{ m.data|dia_semana }}, {{ m.data|data_extensa }}, às {{ m.hora|hora_fmt }}</span>
+        {% if m.data == hoje %}<span class="selo-hoje">Hoje</span>{% endif %}
+        {% if not m.publicada %}<span class="selo-status rascunho">Fora do site</span>{% endif %}
+        <form method="post" action="{{ url_for('excluir_missa', mid=m.id) }}" class="inline"
+              onsubmit="return confirm('Excluir esta missa e a escala dela? Isso não pode ser desfeito.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-vinho btn-pequeno">Excluir</button>
+        </form>
+      </footer>
+    </article>
+  {% endfor %}
+</div>
+
+{% if anteriores %}
+<section class="caixa" style="margin-top:28px">
+  <h2>Missas anteriores</h2>
+  <p class="suave">Elas já saíram da tela inicial, mas continuam valendo para o rodízio.</p>
+  <div class="tabela-rolagem">
+    <table class="tabela tabela-empilhar">
+      <tbody>
+      {% for m in anteriores %}
+        <tr>
+          <td class="nowrap" data-label="Data">{{ m.data|data_curta }}</td>
+          <td data-label="Missa"><strong>{{ m.nome }}</strong></td>
+          <td data-label="Escala">{% for e in escalas[m.id] %}{{ e.nome }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td class="nowrap">
+            <form method="post" action="{{ url_for('excluir_missa', mid=m.id) }}" class="inline"
+                  onsubmit="return confirm('Excluir esta missa e a escala dela? Isso muda o rodízio.');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-pequeno btn-contorno">Excluir</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,19 @@
+<script>
+  (function () {
+    var caixas = document.querySelectorAll('input[name="disponiveis"]');
+    var contador = document.getElementById('contador-disp');
+    function atualizar() {
+      var n = 0; caixas.forEach(function (c) { if (c.checked) n++; });
+      if (contador) contador.textContent = n + ' marcado' + (n === 1 ? '' : 's');
+    }
+    document.querySelectorAll('[data-marcar]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var marcar = b.getAttribute('data-marcar') === 'todos';
+        caixas.forEach(function (c) { c.checked = marcar; });
+        atualizar();
+      });
+    });
+    caixas.forEach(function (c) { c.addEventListener('change', atualizar); });
+    atualizar();
+  })();
+</script>

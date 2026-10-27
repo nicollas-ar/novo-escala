@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Escala cerimoniarios do Limão{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-grade">
+      <span></span>
+      <a class="marca" href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="Logo da Paróquia Santo Antônio do Limão">
+      </a>
+      <div class="topo-acoes">
+        {% if admin %}
+          <a class="btn btn-verde btn-pequeno" href="{{ url_for('nova_missa') }}">Add missa</a>
+        {% else %}
+          <a class="btn btn-contorno btn-pequeno" href="{{ url_for('entrar') }}">Entrar</a>
+        {% endif %}
+      </div>
+    </div>
+    <a class="titulo-site" href="{{ url_for('index') }}">Escala cerimoniarios do Limão</a>
+    {% if admin %}
+      <nav class="menu-admin" aria-label="Menu do coordenador">
+        <a href="{{ url_for('index') }}">Site</a>
+        <a href="{{ url_for('painel') }}">Painel</a>
+        <a href="{{ url_for('cerimoniarios') }}">Cerimoniários</a>
+        <form method="post" action="{{ url_for('sair') }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-contorno btn-pequeno">Sair</button>
+        </form>
+      </nav>
+    {% endif %}
+  </header>
+
+  <main class="conteudo {% block classe_main %}{% endblock %}">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% if mensagens %}
+        <div class="avisos" role="status">
+          {% for cat, msg in mensagens %}
+            <p class="aviso aviso-{{ cat }}">{{ msg }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+  </main>
+
+  <footer class="rodape">Paróquia Santo Antônio do Limão</footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

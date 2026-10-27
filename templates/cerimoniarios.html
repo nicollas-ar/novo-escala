@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}Cerimoniários — Escala cerimoniarios do Limão {% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Cerimoniários</h1>
+<p class="suave">“Recentes” conta as escalas dos últimos 60 dias e das missas já marcadas. Quanto menos, maior a chance no sorteio.</p>
+
+<section class="caixa">
+  <div class="tabela-rolagem">
+    <table class="tabela tabela-pessoas tabela-empilhar">
+      <thead><tr><th>Nome</th><th>Recentes</th><th>Total</th><th>Situação</th></tr></thead>
+      <tbody>
+      {% for c in lista %}
+        <tr class="{% if not c.ativo %}inativo{% endif %}">
+          <td data-label="Nome">
+            <span class="pessoa-linha">
+              <img class="foto foto-p" src="{{ url_for('foto', nome=c.foto) if c.foto else url_for('static', filename='img/logo.jpg') }}" alt="" width="40" height="40" loading="lazy">
+              <strong>{{ c.nome }}</strong>
+            </span>
+          </td>
+          <td data-label="Recentes">{{ recentes.get(c.id, 0) }}</td>
+          <td data-label="Total">{{ totais.get(c.id, 0) }}</td>
+          <td data-label="Situação">
+            <form method="post" action="{{ url_for('atualizar_cerimoniario', cid=c.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="acao" value="{{ 'desativar' if c.ativo else 'ativar' }}">
+              <button type="submit" class="btn btn-pequeno btn-contorno">{{ 'Desativar' if c.ativo else 'Reativar' }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

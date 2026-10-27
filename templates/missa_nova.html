@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Nova missa — Escala cerimoniarios do Limão{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Nova missa</h1>
+<form method="post" class="caixa form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% set min_data = hoje %}
+  {% include "_campos_missa.html" %}
+  <div class="acoes">
+    <button type="submit" class="btn btn-verde">Cadastrar e sortear escala</button>
+    <a class="btn btn-contorno" href="{{ url_for('painel') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}{% include "_scripts_form.html" %}{% endblock %}

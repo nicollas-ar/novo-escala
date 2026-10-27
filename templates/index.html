@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block classe_main %}estreito{% endblock %}
+{% block conteudo %}
+{% if not missas %}
+  <section class="vazio">
+    <p>Nenhuma missa marcada por enquanto.</p>
+    <p class="suave">Assim que a próxima escala for publicada, ela aparece aqui.</p>
+  </section>
+{% endif %}
+
+<div class="lista-missas">
+  {% for m in missas %}
+    <article class="missa">
+      <h2>{{ m.nome }}</h2>
+
+      {% set equipe = escalas[m.id] %}
+      {% if equipe %}
+        <ul class="equipe">
+          {% for e in equipe %}
+            <li>
+              <img class="foto" src="{{ url_for('foto', nome=e.foto) if e.foto else url_for('static', filename='img/logo.jpg') }}"
+                   alt="Foto de {{ e.nome }}" loading="lazy" width="76" height="76">
+              <div class="pessoa">
+                <strong>{{ e.nome }}</strong>
+                <span class="funcao">{{ e.funcao }}</span>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="suave sem-escala">A escala desta missa ainda não foi definida.</p>
+      {% endif %}
+
+      <footer class="missa-rodape">
+        <span class="quando">{{ m.data|dia_semana }}, {{ m.data|data_extensa }}, às {{ m.hora|hora_fmt }}</span>
+        {% if m.data == hoje %}<span class="selo-hoje">Hoje</span>{% endif %}
+      </footer>
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}
