@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block classe_main %}estreito{% endblock %}
+{% block cabeca %}<meta http-equiv="refresh" content="60">{% endblock %}
 {% block conteudo %}
 {% if not missas %}
   <section class="vazio">
@@ -35,6 +36,7 @@
         <span class="quando">{{ m.data|dia_semana }}, {{ m.data|data_extensa }}, às {{ m.hora|hora_fmt }}</span>
         {% if m.data == hoje %}<span class="selo-hoje">Hoje</span>{% endif %}
       </footer>
+      {% if m.recado %}<p class="recado">{{ m.recado }}</p>{% endif %}
     </article>
   {% endfor %}
 </div>

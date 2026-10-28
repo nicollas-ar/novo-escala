@@ -42,6 +42,7 @@
           <button type="submit" class="btn btn-vinho btn-pequeno">Excluir</button>
         </form>
       </footer>
+      {% if m.recado %}<p class="recado">{{ m.recado }}</p>{% endif %}
     </article>
   {% endfor %}
 </div>

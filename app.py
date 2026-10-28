@@ -55,6 +55,16 @@ def hoje_iso():
     return datetime.now(FUSO).date().isoformat()
 
 
+def agora_hora():
+    """Hora atual (HH:MM) no fuso de São Paulo."""
+    return datetime.now(FUSO).strftime("%H:%M")
+
+
+# Uma missa "já passou" quando chega o horário dela (às 19h de uma missa das 19h, ela sai da lista).
+FUTURA = "(data > ? OR (data = ? AND hora > ?))"
+PASSADA = "(data < ? OR (data = ? AND hora <= ?))"
+
+
 def get_db():
     if "db" not in g:
         g.db = dbm.conectar()
@@ -169,10 +179,16 @@ def index():
     db = get_db()
     hoje = hoje_iso()
     missas = db.execute(
-        "SELECT * FROM missas WHERE data >= ? AND publicada = 1 ORDER BY data, hora, id", (hoje,)
+        f"SELECT * FROM missas WHERE {FUTURA} AND publicada = 1 ORDER BY data, hora, id",
+        (hoje, hoje, agora_hora()),
     ).fetchall()
     escalas = carregar_escalas(db, [m["id"] for m in missas])
     return render_template("index.html", missas=missas, escalas=escalas, hoje=hoje)
+
+
+@app.route("/funcoes")
+def funcoes():
+    return render_template("funcoes.html")
 
 
 @app.route("/fotos/<path:nome>")
@@ -230,11 +246,13 @@ def sair():
 def painel():
     db = get_db()
     hoje = hoje_iso()
+    agora = agora_hora()
     proximas = db.execute(
-        "SELECT * FROM missas WHERE data >= ? ORDER BY data, hora, id", (hoje,)
+        f"SELECT * FROM missas WHERE {FUTURA} ORDER BY data, hora, id", (hoje, hoje, agora)
     ).fetchall()
     anteriores = db.execute(
-        "SELECT * FROM missas WHERE data < ? ORDER BY data DESC, hora DESC LIMIT 10", (hoje,)
+        f"SELECT * FROM missas WHERE {PASSADA} ORDER BY data DESC, hora DESC LIMIT 10",
+        (hoje, hoje, agora),
     ).fetchall()
     escalas = carregar_escalas(db, [m["id"] for m in proximas + anteriores])
     return render_template("painel.html", proximas=proximas, anteriores=anteriores,
@@ -271,6 +289,9 @@ def ler_missa(db, form, exigir_futuro=False):
     hora = form.get("hora", "")
     if not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", hora):
         erros.append("Informe um horário válido.")
+    elif exigir_futuro and data == hoje_iso() and hora <= agora_hora():
+        erros.append("O horário dessa missa já passou. Escolha um horário futuro.")
+    recado = form.get("recado", "").replace("\r", "").strip()[:300]
     try:
         qtd = int(form.get("quantidade", ""))
         if not 1 <= qtd <= 30:
@@ -285,7 +306,7 @@ def ler_missa(db, form, exigir_futuro=False):
     elif qtd and len(disponiveis) < qtd:
         erros.append(f"Você pediu {qtd} cerimoniários, mas marcou só {len(disponiveis)} disponíveis.")
     return {"nome": nome, "data": data, "hora": hora, "quantidade": qtd,
-            "disponiveis": disponiveis, "funcoes": ler_funcoes(form)}, erros
+            "disponiveis": disponiveis, "funcoes": ler_funcoes(form), "recado": recado}, erros
 
 
 def valores_form(dados=None):
@@ -296,6 +317,7 @@ def valores_form(dados=None):
         "nome": dados.get("nome", ""),
         "data": dados.get("data", ""),
         "hora": dados.get("hora", ""),
+        "recado": dados.get("recado", ""),
         "quantidade": dados.get("quantidade") or 6,
         "disponiveis": set(dados.get("disponiveis", [])),
         "funcoes": funcoes[:6],
@@ -319,9 +341,9 @@ def gravar_sorteio(db, missa_id, dados):
 
 def gravar_missa(db, missa_id, dados):
     db.execute(
-        "UPDATE missas SET nome=?, data=?, hora=?, quantidade=?, funcoes=? WHERE id=?",
+        "UPDATE missas SET nome=?, data=?, hora=?, quantidade=?, funcoes=?, recado=? WHERE id=?",
         (dados["nome"], dados["data"], dados["hora"], dados["quantidade"],
-         json.dumps(dados["funcoes"], ensure_ascii=False), missa_id),
+         json.dumps(dados["funcoes"], ensure_ascii=False), dados["recado"], missa_id),
     )
     db.execute("DELETE FROM missa_disponiveis WHERE missa_id = ?", (missa_id,))
     db.executemany(
@@ -343,9 +365,9 @@ def nova_missa():
                 {**dados, "funcoes": [request.form.get(f"funcao_{i}", "") for i in range(1, 7)]}),
                 cerimoniarios=_ativos(db), hoje=hoje_iso()), 400
         cur = db.execute(
-            "INSERT INTO missas (nome, data, hora, quantidade, funcoes, publicada) VALUES (?, ?, ?, ?, ?, 1)",
+            "INSERT INTO missas (nome, data, hora, quantidade, funcoes, recado, publicada) VALUES (?, ?, ?, ?, ?, ?, 1)",
             (dados["nome"], dados["data"], dados["hora"], dados["quantidade"],
-             json.dumps(dados["funcoes"], ensure_ascii=False)),
+             json.dumps(dados["funcoes"], ensure_ascii=False), dados["recado"]),
         )
         mid = cur.lastrowid
         gravar_missa(db, mid, dados)

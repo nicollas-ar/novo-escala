@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS missas (
     hora TEXT NOT NULL,          -- HH:MM
     quantidade INTEGER NOT NULL,
     funcoes TEXT NOT NULL DEFAULT '[]',  -- lista JSON com as funções do sorteio
-    publicada INTEGER NOT NULL DEFAULT 1 -- 0 = rascunho (só o coordenador vê)
+    publicada INTEGER NOT NULL DEFAULT 1, -- 0 = rascunho (só o coordenador vê)
+    recado TEXT NOT NULL DEFAULT ''      -- aviso opcional exibido abaixo do horário
 );
 CREATE TABLE IF NOT EXISTS missa_disponiveis (
     missa_id INTEGER NOT NULL REFERENCES missas(id) ON DELETE CASCADE,
@@ -104,6 +105,8 @@ def init_db():
     colunas = [r["name"] for r in conn.execute("PRAGMA table_info(missas)")]
     if "publicada" not in colunas:  # bancos criados em versões anteriores: missas já existentes ficam publicadas
         conn.execute("ALTER TABLE missas ADD COLUMN publicada INTEGER NOT NULL DEFAULT 1")
+    if "recado" not in colunas:  # bancos criados antes do recado: as missas existentes continuam, sem recado
+        conn.execute("ALTER TABLE missas ADD COLUMN recado TEXT NOT NULL DEFAULT ''")
 
     if conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0] == 0:
         usuario = os.environ.get("ADMIN_USER", "juliomalu")

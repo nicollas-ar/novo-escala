@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block cabeca %}{% endblock %}
 </head>
 <body>
   <header class="topo">
@@ -26,10 +27,17 @@
       </div>
     </div>
     <a class="titulo-site" href="{{ url_for('index') }}">Escala cerimoniarios do Limão</a>
+    {% if not admin %}
+      <nav class="menu-admin" aria-label="Menu">
+        <a href="{{ url_for('index') }}">Escala</a>
+        <a href="{{ url_for('funcoes') }}">Funções</a>
+      </nav>
+    {% endif %}
     {% if admin %}
       <nav class="menu-admin" aria-label="Menu do coordenador">
         <a href="{{ url_for('index') }}">Site</a>
         <a href="{{ url_for('painel') }}">Painel</a>
+        <a href="{{ url_for('funcoes') }}">Funções</a>
         <a href="{{ url_for('cerimoniarios') }}">Cerimoniários</a>
         <form method="post" action="{{ url_for('sair') }}" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

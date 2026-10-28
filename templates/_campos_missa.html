@@ -11,6 +11,9 @@
   <label>Quantidade de cerimoniários
     <input type="number" name="quantidade" min="1" max="30" required value="{{ v.quantidade }}">
   </label>
+  <label class="campo-largo">Recado (opcional)
+    <textarea name="recado" maxlength="300" rows="2" placeholder="Ex.: Chegar 30 minutos antes e vir de alva.">{{ v.recado }}</textarea>
+  </label>
 </div>
 
 <fieldset class="grupo">
