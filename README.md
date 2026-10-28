@@ -35,6 +35,12 @@ Na página "Cerimoniários" dá para desativar/reativar alguém e ver as contage
 
 O site é responsivo: funciona no computador e no celular (no celular as tabelas viram cartões).
 
+## Quiz
+
+A aba "Quiz" tem perguntas em três níveis (fácil, médio e difícil), sorteadas em ordem aleatória, em
+rodadas de 10. As perguntas ficam em `quiz_perguntas.py`, uma por linha no formato
+`pergunta|resposta certa|errada 1|errada 2|errada 3`. Para acrescentar, basta incluir novas linhas.
+
 ## Publicar (ex.: Render)
 
 - Comando de início: `gunicorn app:app`

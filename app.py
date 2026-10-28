@@ -14,6 +14,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash
 
 import database as dbm
+import quiz_perguntas
 from sorteio import (FUNCAO_PADRAO, FUNCOES_PADRAO, atribuir_funcoes,
                      contagens_para_painel, sortear_pessoas)
 
@@ -189,6 +190,11 @@ def index():
 @app.route("/funcoes")
 def funcoes():
     return render_template("funcoes.html")
+
+
+@app.route("/quiz")
+def quiz():
+    return render_template("quiz.html", perguntas=quiz_perguntas.carregar())
 
 
 @app.route("/fotos/<path:nome>")

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block titulo %}Quiz — Escala cerimoniarios do Limão{% endblock %}
+{% block classe_main %}estreito{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Quiz litúrgico</h1>
+
+<section class="caixa" id="quiz-inicio">
+  <p>Teste o que você sabe sobre liturgia, Bíblia, santos e história da Igreja. As perguntas saem em ordem aleatória, e as alternativas também.</p>
+  <p class="suave"><span id="quiz-total"></span> perguntas no total. Cada rodada tem 10 perguntas.</p>
+  <h2>Escolha o nível</h2>
+  <div class="quiz-niveis">
+    <button type="button" class="btn btn-verde" data-nivel="0">Todos os níveis</button>
+    <button type="button" class="btn btn-contorno" data-nivel="1">Fácil</button>
+    <button type="button" class="btn btn-contorno" data-nivel="2">Médio</button>
+    <button type="button" class="btn btn-contorno" data-nivel="3">Difícil</button>
+  </div>
+</section>
+
+<section class="caixa" id="quiz-jogo" hidden>
+  <div class="quiz-topo">
+    <span id="quiz-progresso"></span>
+    <span class="selo-status rascunho" id="quiz-nivel"></span>
+  </div>
+  <h2 id="quiz-pergunta"></h2>
+  <div class="quiz-opcoes" id="quiz-opcoes"></div>
+  <p class="quiz-feedback" id="quiz-feedback" role="status" aria-live="polite"></p>
+  <div class="acoes">
+    <button type="button" class="btn btn-verde" id="quiz-proxima" hidden>Próxima</button>
+  </div>
+</section>
+
+<section class="caixa" id="quiz-fim" hidden>
+  <h2>Fim da rodada</h2>
+  <p class="quiz-placar" id="quiz-placar"></p>
+  <p id="quiz-mensagem"></p>
+  <div class="acoes">
+    <button type="button" class="btn btn-verde" id="quiz-de-novo">Jogar de novo</button>
+    <button type="button" class="btn btn-contorno" id="quiz-trocar">Trocar o nível</button>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var TODAS = {{ perguntas|tojson }};
+  var POR_RODADA = 10;
+  var NOMES = {1: 'Fácil', 2: 'Médio', 3: 'Difícil'};
+  var $ = function (id) { return document.getElementById(id); };
+
+  var nivel = 0, baralho = [], pos = 0, rodada = [], atual = 0, acertos = 0, respondeu = false;
+
+  function embaralhar(v) {
+    var a = v.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function mostrar(id) {
+    ['quiz-inicio', 'quiz-jogo', 'quiz-fim'].forEach(function (x) { $(x).hidden = (x !== id); });
+  }
+  function novoBaralho() {
+    var pool = TODAS.filter(function (q) { return nivel === 0 || q.n === nivel; });
+    baralho = embaralhar(pool); pos = 0;
+  }
+  function novaRodada() {
+    // sorteia 10 perguntas sem repetir até o baralho acabar; depois embaralha de novo
+    rodada = [];
+    while (rodada.length < POR_RODADA) {
+      if (pos >= baralho.length) novoBaralho();
+      var q = baralho[pos++];
+      if (rodada.indexOf(q) === -1) rodada.push(q);
+    }
+    atual = 0; acertos = 0;
+    mostrarPergunta();
+  }
+  function placarTopo() {
+    $('quiz-progresso').textContent = 'Pergunta ' + (atual + 1) + ' de ' + rodada.length + ' · Acertos: ' + acertos;
+  }
+  function mostrarPergunta() {
+    var q = rodada[atual]; respondeu = false;
+    mostrar('quiz-jogo');
+    placarTopo();
+    $('quiz-nivel').textContent = NOMES[q.n];
+    $('quiz-pergunta').textContent = q.p;
+    $('quiz-feedback').textContent = '';
+    $('quiz-feedback').className = 'quiz-feedback';
+    $('quiz-proxima').hidden = true;
+    $('quiz-proxima').textContent = (atual === rodada.length - 1) ? 'Ver resultado' : 'Próxima';
+    var box = $('quiz-opcoes'); box.innerHTML = '';
+    embaralhar([q.c].concat(q.e)).forEach(function (texto) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'quiz-opcao'; b.textContent = texto;
+      b.addEventListener('click', function () { responder(b, texto, q); });
+      box.appendChild(b);
+    });
+  }
+  function responder(botao, texto, q) {
+    if (respondeu) return; respondeu = true;
+    var certa = (texto === q.c);
+    if (certa) acertos++;
+    Array.prototype.forEach.call($('quiz-opcoes').children, function (b) {
+      b.disabled = true;
+      if (b.textContent === q.c) b.classList.add('certa');
+    });
+    if (!certa) botao.classList.add('errada');
+    var fb = $('quiz-feedback');
+    fb.textContent = certa ? 'Resposta certa!' : 'Não foi dessa vez. A resposta certa está destacada em verde.';
+    fb.className = 'quiz-feedback ' + (certa ? 'ok' : 'erro');
+    placarTopo();
+    $('quiz-proxima').hidden = false;
+    $('quiz-proxima').focus();
+  }
+  function fim() {
+    mostrar('quiz-fim');
+    $('quiz-placar').textContent = 'Você acertou ' + acertos + ' de ' + rodada.length + '.';
+    var m = acertos === rodada.length ? 'Perfeito! Parabéns!' :
+            acertos >= 7 ? 'Muito bem! Você conhece bastante.' :
+            acertos >= 4 ? 'Bom resultado. Que tal tentar de novo?' :
+                           'Continue estudando. A prática leva à perfeição!';
+    $('quiz-mensagem').textContent = m;
+  }
+
+  $('quiz-total').textContent = TODAS.length;
+  document.querySelectorAll('[data-nivel]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      nivel = parseInt(b.getAttribute('data-nivel'), 10);
+      novoBaralho(); novaRodada();
+    });
+  });
+  $('quiz-proxima').addEventListener('click', function () {
+    if (atual === rodada.length - 1) { fim(); } else { atual++; mostrarPergunta(); }
+  });
+  $('quiz-de-novo').addEventListener('click', novaRodada);
+  $('quiz-trocar').addEventListener('click', function () { mostrar('quiz-inicio'); });
+})();
+</script>
+{% endblock %}
