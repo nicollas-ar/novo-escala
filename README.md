@@ -27,9 +27,9 @@ Abra http://localhost:5000
    bem mais chance. Ninguém fica com chance zero.
 3. As funções (Padre, Missal, Leitor, Gerenciar Coroinha + até 2 personalizadas) são
    distribuídas preferindo quem menos fez aquela função antes. Quem sobrar fica como "Cerimoniário".
-4. A escala sorteada já é **publicada na hora** no site. Depois de sorteada, o coordenador não
-   altera nada: só pode **excluir** a missa (no painel) se for necessário. As funções só podem ser
-   personalizadas **antes** do sorteio.
+4. A escala sorteada fica como **rascunho** (só o coordenador vê). Antes de publicar, o coordenador
+   pode **editar as funções** de cada vaga ("Editar funções" no painel) e então clicar em **Publicar**.
+   Depois de publicada, nada mais pode ser alterado: só dá para **excluir** a missa se for necessário.
 
 Na página "Cerimoniários" dá para desativar/reativar alguém e ver as contagens do rodízio.
 
@@ -50,6 +50,27 @@ rodadas de 10. As perguntas ficam em `quiz_perguntas.py`, uma por linha no forma
   - `ADMIN_USER` / `ADMIN_PASSWORD` — valem só na **primeira** execução (quando o banco é criado)
   - `DATA_DIR` — pasta onde ficam o banco e as fotos. **Aponte para um disco persistente**
     (ex.: `/var/data`), senão o banco é apagado a cada novo deploy.
+
+## Banco gratuito externo (Neon) e site sempre ligado
+
+No plano gratuito do Render o disco é apagado a cada deploy. Para não perder as missas, use um banco
+PostgreSQL gratuito do Neon: crie o projeto no Neon, copie a "connection string" e coloque no Render
+na variável `DATABASE_URL`. Com ela definida, o app usa o PostgreSQL (as tabelas são criadas sozinhas);
+sem ela, usa o arquivo SQLite local.
+
+Variáveis no Render: `DATABASE_URL`, `SECRET_KEY`, `PRODUCAO=1`, `ADMIN_PASSWORD` (vale só na primeira
+execução) e, se quiser fixar, `PYTHON_VERSION`. O arquivo `.python-version` já pede o Python 3.12.
+
+Para o site não "dormir" no plano gratuito, cadastre no UptimeRobot (gratuito) um monitor HTTP a cada
+5 minutos em `https://SEU-SITE.onrender.com/saude`. Essa rota não consulta o banco de propósito, para o
+banco do Neon poder descansar e não gastar as horas gratuitas.
+
+## Backup
+
+No painel há os botões **Baixar backup** (gera um arquivo .json com missas, escalas e cerimoniários) e
+**Restaurar backup** (substitui as missas atuais pelas do arquivo). Baixe uma cópia de vez em quando.
+Em produção (`PRODUCAO=1`) o app se recusa a iniciar com banco temporário: defina `DATABASE_URL` (Neon)
+ou `DATA_DIR` (disco persistente).
 
 ## Segurança
 

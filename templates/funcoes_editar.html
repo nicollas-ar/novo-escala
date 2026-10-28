@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Editar funções — Escala cerimoniarios do Limão{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">{{ missa.nome }}</h1>
+<p class="suave">{{ missa.data|dia_semana }}, {{ missa.data|data_curta }}, às {{ missa.hora|hora_fmt }}</p>
+<p class="aviso aviso-aviso faixa-status">Rascunho: esta escala ainda não aparece no site. Aqui você pode mudar só as funções. Depois de publicada, nada mais pode ser alterado.</p>
+
+<form method="post" class="caixa form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>Funções da escala</h2>
+  <div class="tabela-rolagem">
+    <table class="tabela tabela-escala tabela-empilhar">
+      <thead><tr><th>Cerimoniário</th><th>Função</th></tr></thead>
+      <tbody>
+        {% for e in escala %}
+          <tr>
+            <td data-label="Cerimoniário">
+              <input type="hidden" name="slot_id" value="{{ e.id }}">
+              <span class="pessoa-linha">
+                <img class="foto foto-p" src="{{ url_for('foto', nome=e.foto) if e.foto else url_for('static', filename='img/logo.jpg') }}" alt="" width="40" height="40" loading="lazy">
+                <strong>{{ e.nome }}</strong>
+              </span>
+            </td>
+            <td data-label="Função"><input type="text" name="funcao_vaga" list="lista-funcoes" maxlength="30" value="{{ e.funcao }}" aria-label="Função de {{ e.nome }}"></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <datalist id="lista-funcoes">
+    {% for f in sugestoes %}<option value="{{ f }}">{% endfor %}
+  </datalist>
+  <div class="acoes">
+    <button type="submit" name="acao" value="salvar" class="btn btn-verde">Salvar funções</button>
+    <button type="submit" name="acao" value="publicar" class="btn btn-ouro">Salvar e publicar</button>
+    <a class="btn btn-contorno" href="{{ url_for('painel') }}">Voltar ao painel</a>
+  </div>
+</form>
+{% endblock %}

@@ -35,7 +35,14 @@
       <footer class="missa-rodape">
         <span class="quando">{{ m.data|dia_semana }}, {{ m.data|data_extensa }}, às {{ m.hora|hora_fmt }}</span>
         {% if m.data == hoje %}<span class="selo-hoje">Hoje</span>{% endif %}
-        {% if not m.publicada %}<span class="selo-status rascunho">Fora do site</span>{% endif %}
+        {% if not m.publicada %}<span class="selo-status rascunho">Rascunho: ainda não está no site</span>{% endif %}
+        {% if not m.publicada %}
+          <a class="btn btn-contorno btn-pequeno" href="{{ url_for('editar_funcoes', mid=m.id) }}">Editar funções</a>
+          <form method="post" action="{{ url_for('publicar_missa', mid=m.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ouro btn-pequeno">Publicar</button>
+          </form>
+        {% endif %}
         <form method="post" action="{{ url_for('excluir_missa', mid=m.id) }}" class="inline"
               onsubmit="return confirm('Excluir esta missa e a escala dela? Isso não pode ser desfeito.');">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -73,4 +80,20 @@
   </div>
 </section>
 {% endif %}
+
+<section class="caixa" style="margin-top:28px">
+  <h2>Backup</h2>
+  <p class="suave">Baixe uma cópia de todas as missas e escalas de vez em quando e guarde no seu computador ou no Google Drive. Se algum dia os dados sumirem, é possível restaurar por aqui.</p>
+  <div class="acoes">
+    <a class="btn btn-verde" href="{{ url_for('backup') }}">Baixar backup</a>
+  </div>
+  <form method="post" action="{{ url_for('restaurar') }}" enctype="multipart/form-data" class="form" style="margin-top:16px"
+        onsubmit="return confirm('Restaurar vai SUBSTITUIR todas as missas atuais pelas do arquivo. Continuar?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Restaurar a partir de um backup
+      <input type="file" name="arquivo" accept=".json,application/json" required>
+    </label>
+    <button type="submit" class="btn btn-contorno">Restaurar backup</button>
+  </form>
+</section>
 {% endblock %}

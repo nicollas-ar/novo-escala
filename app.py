@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 from zoneinfo import ZoneInfo
 
-from flask import (Flask, abort, flash, g, redirect, render_template, request,
+from flask import (Flask, Response, abort, flash, g, redirect, render_template, request,
                    send_from_directory, session, url_for)
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash
@@ -185,6 +185,12 @@ def index():
     ).fetchall()
     escalas = carregar_escalas(db, [m["id"] for m in missas])
     return render_template("index.html", missas=missas, escalas=escalas, hoje=hoje)
+
+
+@app.route("/saude")
+def saude():
+    # usado pelo monitor que mantém o site acordado; não consulta o banco de propósito
+    return f"ok\nbanco: {dbm.MODO_BANCO}", 200, {"Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store"}
 
 
 @app.route("/funcoes")
@@ -371,7 +377,7 @@ def nova_missa():
                 {**dados, "funcoes": [request.form.get(f"funcao_{i}", "") for i in range(1, 7)]}),
                 cerimoniarios=_ativos(db), hoje=hoje_iso()), 400
         cur = db.execute(
-            "INSERT INTO missas (nome, data, hora, quantidade, funcoes, recado, publicada) VALUES (?, ?, ?, ?, ?, ?, 1)",
+            "INSERT INTO missas (nome, data, hora, quantidade, funcoes, recado, publicada) VALUES (?, ?, ?, ?, ?, ?, 0)",
             (dados["nome"], dados["data"], dados["hora"], dados["quantidade"],
              json.dumps(dados["funcoes"], ensure_ascii=False), dados["recado"]),
         )
@@ -379,10 +385,54 @@ def nova_missa():
         gravar_missa(db, mid, dados)
         gravar_sorteio(db, mid, dados)
         db.commit()
-        flash("Escala sorteada e publicada no site.", "ok")
+        flash("Escala sorteada! Ela ainda é um rascunho e não aparece no site. Ajuste as funções, se quiser, "
+              "e clique em “Publicar”. Depois de publicada, não dá mais para alterar.", "ok")
         return redirect(url_for("painel"))
     return render_template("missa_nova.html", v=valores_form(), cerimoniarios=_ativos(db),
                            hoje=hoje_iso())
+
+
+@app.route("/admin/missas/<int:mid>/funcoes", methods=["GET", "POST"])
+@login_obrigatorio
+def editar_funcoes(mid):
+    """Antes de publicar, o coordenador pode ajustar só as funções de cada vaga."""
+    db = get_db()
+    missa = db.execute("SELECT * FROM missas WHERE id = ?", (mid,)).fetchone()
+    if not missa:
+        abort(404)
+    if missa["publicada"]:
+        flash("Esta escala já foi publicada e não pode mais ser alterada. Se precisar, exclua a missa e cadastre de novo.", "aviso")
+        return redirect(url_for("painel"))
+    escala = carregar_escalas(db, [mid])[mid]
+    if request.method == "POST":
+        validas = {str(e["id"]) for e in escala}
+        for sid, fn in zip(request.form.getlist("slot_id"), request.form.getlist("funcao_vaga")):
+            if sid not in validas:
+                continue
+            fn = " ".join(fn.split())[:30] or FUNCAO_PADRAO
+            db.execute("UPDATE escala SET funcao = ? WHERE id = ? AND missa_id = ?", (fn, int(sid), mid))
+        if request.form.get("acao") == "publicar":
+            db.execute("UPDATE missas SET publicada = 1 WHERE id = ?", (mid,))
+            flash("Funções salvas e escala publicada no site.", "ok")
+        else:
+            flash("Funções salvas. A escala continua como rascunho.", "ok")
+        db.commit()
+        return redirect(url_for("painel"))
+    sugestoes = []
+    for f in json.loads(missa["funcoes"] or "[]") + [FUNCAO_PADRAO]:
+        if f and f not in sugestoes:
+            sugestoes.append(f)
+    return render_template("funcoes_editar.html", missa=missa, escala=escala, sugestoes=sugestoes)
+
+
+@app.route("/admin/missas/<int:mid>/publicar", methods=["POST"])
+@login_obrigatorio
+def publicar_missa(mid):
+    db = get_db()
+    db.execute("UPDATE missas SET publicada = 1 WHERE id = ?", (mid,))
+    db.commit()
+    flash("Escala publicada no site.", "ok")
+    return redirect(url_for("painel"))
 
 
 @app.route("/admin/missas/<int:mid>/excluir", methods=["POST"])
@@ -392,6 +442,113 @@ def excluir_missa(mid):
     db.execute("DELETE FROM missas WHERE id = ?", (mid,))
     db.commit()
     flash("Missa excluída.", "ok")
+    return redirect(url_for("painel"))
+
+
+# ------------------------------------------------------------ backup e restauração
+
+@app.route("/admin/backup")
+@login_obrigatorio
+def backup():
+    """Baixa um arquivo com tudo (cerimoniários, missas, disponíveis e escalas), sem depender de ids."""
+    db = get_db()
+    cer = db.execute("SELECT id, nome, ativo FROM cerimoniarios ORDER BY id").fetchall()
+    nome_de = {c["id"]: c["nome"] for c in cer}
+    missas = db.execute("SELECT * FROM missas ORDER BY data, hora, id").fetchall()
+    disp = {m["id"]: [] for m in missas}
+    esc = {m["id"]: [] for m in missas}
+    for r in db.execute("SELECT missa_id, cerimoniario_id FROM missa_disponiveis"):
+        if r["missa_id"] in disp and r["cerimoniario_id"] in nome_de:
+            disp[r["missa_id"]].append(nome_de[r["cerimoniario_id"]])
+    for r in db.execute("SELECT missa_id, cerimoniario_id, funcao, ordem FROM escala ORDER BY missa_id, ordem, id"):
+        if r["missa_id"] in esc and r["cerimoniario_id"] in nome_de:
+            esc[r["missa_id"]].append({"nome": nome_de[r["cerimoniario_id"]], "funcao": r["funcao"]})
+    dados = {
+        "versao": 1,
+        "gerado_em": datetime.now(FUSO).isoformat(timespec="seconds"),
+        "cerimoniarios": [{"nome": c["nome"], "ativo": int(c["ativo"])} for c in cer],
+        "missas": [{
+            "nome": m["nome"], "data": m["data"], "hora": m["hora"], "quantidade": m["quantidade"],
+            "funcoes": json.loads(m["funcoes"] or "[]"), "recado": m["recado"],
+            "publicada": int(m["publicada"]), "disponiveis": disp[m["id"]], "escala": esc[m["id"]],
+        } for m in missas],
+    }
+    corpo = json.dumps(dados, ensure_ascii=False, indent=1)
+    return Response(corpo, mimetype="application/json", headers={
+        "Content-Disposition": f'attachment; filename="backup-escala-{hoje_iso()}.json"',
+        "Cache-Control": "no-store",
+    })
+
+
+@app.route("/admin/restaurar", methods=["POST"])
+@login_obrigatorio
+def restaurar():
+    """Substitui TODAS as missas pelas do arquivo de backup (cerimoniários são casados pelo nome)."""
+    arq = request.files.get("arquivo")
+    if not arq or not arq.filename:
+        flash("Escolha o arquivo de backup.", "erro")
+        return redirect(url_for("painel"))
+    try:
+        dados = json.loads(arq.read().decode("utf-8"))
+        if dados.get("versao") != 1 or not isinstance(dados.get("missas"), list) \
+                or not isinstance(dados.get("cerimoniarios"), list):
+            raise ValueError("formato")
+    except Exception:
+        flash("Arquivo de backup inválido.", "erro")
+        return redirect(url_for("painel"))
+
+    db = get_db()
+    try:
+        ids = {r["nome"]: r["id"] for r in db.execute("SELECT id, nome FROM cerimoniarios")}
+
+        def id_de(nome):
+            nome = str(nome).strip()[:80]
+            if nome not in ids:
+                db.execute("INSERT INTO cerimoniarios (nome, foto, ativo) VALUES (?, NULL, 1)", (nome,))
+                ids[nome] = db.execute("SELECT id FROM cerimoniarios WHERE nome = ?", (nome,)).fetchone()["id"]
+            return ids[nome]
+
+        for c in dados["cerimoniarios"]:
+            if str(c.get("nome", "")).strip():
+                db.execute("UPDATE cerimoniarios SET ativo = ? WHERE id = ?",
+                           (1 if c.get("ativo", 1) else 0, id_de(c["nome"])))
+
+        db.execute("DELETE FROM missas")          # a exclusão em cascata limpa escalas e disponíveis
+        total = 0
+        for m in dados["missas"]:
+            data, hora = str(m.get("data", "")), str(m.get("hora", ""))
+            date.fromisoformat(data)
+            if not re.fullmatch(r"\d{2}:\d{2}", hora):
+                raise ValueError("hora")
+            funcoes = [" ".join(str(f).split())[:30] for f in (m.get("funcoes") or [])][:6]
+            qtd = max(1, min(30, int(m.get("quantidade", 1))))
+            cur = db.execute(
+                "INSERT INTO missas (nome, data, hora, quantidade, funcoes, recado, publicada) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (str(m.get("nome", "Missa")).strip()[:80] or "Missa", data, hora, qtd,
+                 json.dumps(funcoes, ensure_ascii=False), str(m.get("recado", ""))[:300],
+                 1 if m.get("publicada", 1) else 0),
+            )
+            mid = cur.lastrowid
+            vistos = []
+            for nome in m.get("disponiveis") or []:
+                cid = id_de(nome)
+                if cid not in vistos:
+                    vistos.append(cid)
+            db.executemany("INSERT INTO missa_disponiveis (missa_id, cerimoniario_id) VALUES (?, ?)",
+                           [(mid, c) for c in vistos])
+            db.executemany(
+                "INSERT INTO escala (missa_id, cerimoniario_id, funcao, ordem) VALUES (?, ?, ?, ?)",
+                [(mid, id_de(e["nome"]), " ".join(str(e.get("funcao", "")).split())[:30] or FUNCAO_PADRAO, i)
+                 for i, e in enumerate(m.get("escala") or [])],
+            )
+            total += 1
+        db.commit()
+    except Exception:
+        db.rollback()
+        flash("Não foi possível restaurar: o arquivo parece estar incompleto ou corrompido. "
+              "Nada foi alterado.", "erro")
+        return redirect(url_for("painel"))
+    flash(f"Backup restaurado: {total} missa(s) recuperada(s).", "ok")
     return redirect(url_for("painel"))
 
 
