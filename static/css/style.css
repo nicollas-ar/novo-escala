@@ -198,8 +198,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 /* ---------- santo do dia ---------- */
 .santo-nav { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
 .santo-data { color: var(--suave); font-weight: 600; margin: 0 0 4px; }
-
+.santo-tipo { display: inline-block; background: var(--dourado-suave); color: #5a4300; font-weight: 800; font-size: .8rem; padding: 4px 12px; border-radius: 999px; margin: 0 0 10px; }
 .santo-foto { display: block; width: 100%; max-width: 260px; max-height: 340px; object-fit: cover; border-radius: 18px; border: 3px solid var(--vinho); margin: 0 auto 16px; background: var(--dourado-suave); }
 .santo-texto p { margin: 0 0 12px; line-height: 1.6; }
 .santo-fonte { margin-top: 16px !important; font-size: .82rem; }
-.santo-ler { margin: 14px 0 0; text-align: center; }

@@ -12,23 +12,23 @@
 
 <article class="missa santo">
   <p class="santo-data">{{ dia|dia_semana }}, {{ dia|data_extensa }}</p>
+  <p class="santo-tipo">{{ 'Santo do dia' if festa else 'Para conhecer hoje' }}</p>
+  <h2>{{ nome }}</h2>
 
   {% if info %}
-    <h2>{{ info.nome }}</h2>
     {% if info.imagem %}
-      <img class="santo-foto" src="{{ info.imagem }}" alt="Imagem de {{ info.nome }}" referrerpolicy="no-referrer" loading="lazy">
+      <img class="santo-foto" src="{{ info.imagem }}" alt="Imagem de {{ nome }}" referrerpolicy="no-referrer" loading="lazy">
     {% endif %}
-    {% if info.paragrafos %}
-      <div class="santo-texto">
-        {% for p in info.paragrafos %}<p>{{ p }}</p>{% endfor %}
-      </div>
-    {% endif %}
-    <p class="santo-ler"><a class="btn btn-contorno btn-pequeno" href="{{ info.url }}" target="_blank" rel="noopener noreferrer">Ler a vida completa</a></p>
-    <p class="suave santo-fonte">Informações e imagem do <a href="{{ fonte }}" target="_blank" rel="noopener noreferrer">CatolicoApp</a>.</p>
+    <div class="santo-texto">
+      {% for p in info.paragrafos %}<p>{{ p }}</p>{% endfor %}
+    </div>
+    <p class="suave santo-fonte">
+      Texto e imagem da <a href="{{ info.url }}" target="_blank" rel="noopener">Wikipédia</a>, a enciclopédia livre
+      (artigo “{{ info.titulo }}”, sob licença CC BY-SA 4.0; veja os créditos da imagem no próprio artigo).
+    </p>
   {% else %}
-    <h2>Santo do dia</h2>
-    <p class="suave">O Santo do Dia está temporariamente indisponível. Tente de novo em alguns minutos ou
-      veja direto no <a href="{{ fonte }}" target="_blank" rel="noopener noreferrer">CatolicoApp</a>.</p>
+    <p class="suave">Não foi possível carregar o texto da Wikipédia agora. Tente de novo em alguns minutos ou
+      <a href="{{ busca }}" target="_blank" rel="noopener">pesquise na Wikipédia</a>.</p>
   {% endif %}
 </article>
 {% endblock %}

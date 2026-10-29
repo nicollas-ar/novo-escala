@@ -208,11 +208,13 @@ def santo():
             raise ValueError
     except ValueError:
         dia = hoje
-    info = santo_do_dia.obter(dia.day, dia.month)
+    nome, titulo, festa = santo_do_dia.escolher(dia)
+    info = santo_do_dia.obter(titulo, nome)
     return render_template(
-        "santo.html", info=info, dia=dia.isoformat(),
+        "santo.html", nome=nome, festa=festa, info=info, dia=dia.isoformat(),
         ontem=(dia - timedelta(days=1)).isoformat(), amanha=(dia + timedelta(days=1)).isoformat(),
-        e_hoje=(dia == hoje), fonte=santo_do_dia.PAGINA_FONTE,
+        e_hoje=(dia == hoje),
+        busca="https://pt.wikipedia.org/w/index.php?search=" + nome.replace(" ", "+"),
     )
 
 

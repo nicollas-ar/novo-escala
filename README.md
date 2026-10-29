@@ -37,10 +37,9 @@ O site é responsivo: funciona no computador e no celular (no celular as tabelas
 
 ## Santo do dia
 
-A aba "Santo do dia" busca o santo da data na API do CatolicoApp (a mesma usada pelo plugin WP Santo do
-Dia, `https://catolicoapp.com/wp-json/wp/v2/santos?dia=D&mes=M`): nome, foto e, se a API fornecer, o texto
-da vida. Nada é gravado no banco: o resultado fica só em memória por 12 horas. Se a API falhar, o site
-mostra um aviso e espera 15 minutos antes de tentar de novo.
+A aba "Santo do dia" mostra o santo da data (calendário em `santo_do_dia.py`) com foto e texto buscados
+na Wikipédia em português. Nada disso é gravado no banco: fica só em memória por 24 horas. Nos dias sem
+festa no calendário, aparece um santo da lista `POOL`, identificado como "Para conhecer hoje".
 
 ## Quiz
 
