@@ -35,6 +35,12 @@ Na página "Cerimoniários" dá para desativar/reativar alguém e ver as contage
 
 O site é responsivo: funciona no computador e no celular (no celular as tabelas viram cartões).
 
+## Santo do dia
+
+A aba "Santo do dia" mostra o santo da data (calendário em `santo_do_dia.py`) com foto e texto buscados
+na Wikipédia em português. Nada disso é gravado no banco: fica só em memória por 24 horas. Nos dias sem
+festa no calendário, aparece um santo da lista `POOL`, identificado como "Para conhecer hoje".
+
 ## Quiz
 
 A aba "Quiz" tem perguntas em três níveis (fácil, médio e difícil), sorteadas em ordem aleatória, em
@@ -47,8 +53,7 @@ rodadas de 10. As perguntas ficam em `quiz_perguntas.py`, uma por linha no forma
 - Variáveis de ambiente recomendadas:
   - `SECRET_KEY` — um texto longo e aleatório
   - `PRODUCAO=1` — cookies só por HTTPS
-  - `ADMIN_USER` / `ADMIN_PASSWORD` — usuário e senha do coordenador. Valem a cada início do app:
-    para trocar a senha, mude a variável e reinicie
+  - `ADMIN_USER` / `ADMIN_PASSWORD` — valem só na **primeira** execução (quando o banco é criado)
   - `DATA_DIR` — pasta onde ficam o banco e as fotos. **Aponte para um disco persistente**
     (ex.: `/var/data`), senão o banco é apagado a cada novo deploy.
 
@@ -59,8 +64,8 @@ PostgreSQL gratuito do Neon: crie o projeto no Neon, copie a "connection string"
 na variável `DATABASE_URL`. Com ela definida, o app usa o PostgreSQL (as tabelas são criadas sozinhas);
 sem ela, usa o arquivo SQLite local.
 
-Variáveis no Render: `DATABASE_URL`, `SECRET_KEY`, `PRODUCAO=1`, `ADMIN_USER`, `ADMIN_PASSWORD` e,
-se quiser fixar, `PYTHON_VERSION`. O arquivo `.python-version` já pede o Python 3.12.
+Variáveis no Render: `DATABASE_URL`, `SECRET_KEY`, `PRODUCAO=1`, `ADMIN_PASSWORD` (vale só na primeira
+execução) e, se quiser fixar, `PYTHON_VERSION`. O arquivo `.python-version` já pede o Python 3.12.
 
 Para o site não "dormir" no plano gratuito, cadastre no UptimeRobot (gratuito) um monitor HTTP a cada
 5 minutos em `https://SEU-SITE.onrender.com/saude`. Essa rota não consulta o banco de propósito, para o
@@ -75,7 +80,8 @@ ou `DATA_DIR` (disco persistente).
 
 ## Segurança
 
-Troque a senha `12345` antes de publicar (defina `ADMIN_USER` e `ADMIN_PASSWORD` e reinicie o app). O login bloqueia o IP por 5 minutos após 5 erros
+Troque a senha `12345` antes de publicar (defina `ADMIN_PASSWORD` antes da primeira execução
+ou apague `instance/escala.db` para recriar). O login bloqueia o IP por 5 minutos após 5 erros
 seguidos, e todos os formulários usam token CSRF.
 
 ## Arquivos

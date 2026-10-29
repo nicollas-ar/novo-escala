@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Santo do dia — Escala cerimoniarios do Limão{% endblock %}
+{% block classe_main %}estreito{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Santo do dia</h1>
+
+<nav class="santo-nav" aria-label="Escolher o dia">
+  <a class="btn btn-contorno btn-pequeno" href="{{ url_for('santo', dia=ontem) }}">&larr; Dia anterior</a>
+  {% if not e_hoje %}<a class="btn btn-verde btn-pequeno" href="{{ url_for('santo') }}">Hoje</a>{% endif %}
+  <a class="btn btn-contorno btn-pequeno" href="{{ url_for('santo', dia=amanha) }}">Próximo dia &rarr;</a>
+</nav>
+
+<article class="missa santo">
+  <p class="santo-data">{{ dia|dia_semana }}, {{ dia|data_extensa }}</p>
+  <p class="santo-tipo">{{ 'Santo do dia' if festa else 'Para conhecer hoje' }}</p>
+  <h2>{{ nome }}</h2>
+
+  {% if info %}
+    {% if info.imagem %}
+      <img class="santo-foto" src="{{ info.imagem }}" alt="Imagem de {{ nome }}" referrerpolicy="no-referrer" loading="lazy">
+    {% endif %}
+    <div class="santo-texto">
+      {% for p in info.paragrafos %}<p>{{ p }}</p>{% endfor %}
+    </div>
+    <p class="suave santo-fonte">
+      Texto e imagem da <a href="{{ info.url }}" target="_blank" rel="noopener">Wikipédia</a>, a enciclopédia livre
+      (artigo “{{ info.titulo }}”, sob licença CC BY-SA 4.0; veja os créditos da imagem no próprio artigo).
+    </p>
+  {% else %}
+    <p class="suave">Não foi possível carregar o texto da Wikipédia agora. Tente de novo em alguns minutos ou
+      <a href="{{ busca }}" target="_blank" rel="noopener">pesquise na Wikipédia</a>.</p>
+  {% endif %}
+</article>
+{% endblock %}

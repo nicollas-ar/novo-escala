@@ -15,6 +15,7 @@ from werkzeug.security import check_password_hash
 
 import database as dbm
 import quiz_perguntas
+import santo_do_dia
 from sorteio import (FUNCAO_PADRAO, FUNCOES_PADRAO, atribuir_funcoes,
                      contagens_para_painel, sortear_pessoas)
 
@@ -196,6 +197,25 @@ def saude():
 @app.route("/funcoes")
 def funcoes():
     return render_template("funcoes.html")
+
+
+@app.route("/santo")
+def santo():
+    hoje = date.fromisoformat(hoje_iso())
+    try:
+        dia = date.fromisoformat(request.args.get("dia", ""))
+        if not (2000 <= dia.year <= 2100):
+            raise ValueError
+    except ValueError:
+        dia = hoje
+    nome, titulo, festa = santo_do_dia.escolher(dia)
+    info = santo_do_dia.obter(titulo, nome)
+    return render_template(
+        "santo.html", nome=nome, festa=festa, info=info, dia=dia.isoformat(),
+        ontem=(dia - timedelta(days=1)).isoformat(), amanha=(dia + timedelta(days=1)).isoformat(),
+        e_hoje=(dia == hoje),
+        busca="https://pt.wikipedia.org/w/index.php?search=" + nome.replace(" ", "+"),
+    )
 
 
 @app.route("/quiz")

@@ -252,32 +252,13 @@ def init_db():
         if "recado" not in colunas:  # bancos criados antes do recado: as missas existentes continuam, sem recado
             conn.execute("ALTER TABLE missas ADD COLUMN recado TEXT NOT NULL DEFAULT ''")
 
-    usuario_env = os.environ.get("ADMIN_USER", "").strip()
-    senha_env = os.environ.get("ADMIN_PASSWORD", "")
     if conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0] == 0:
-        usuario = usuario_env or "juliomalu"
-        senha = senha_env or "12345"
+        usuario = os.environ.get("ADMIN_USER", "juliomalu")
+        senha = os.environ.get("ADMIN_PASSWORD", "12345")
         conn.execute(
             "INSERT INTO admins (usuario, senha_hash) VALUES (?, ?)",
             (usuario, generate_password_hash(senha)),
         )
-    elif senha_env:
-        # O banco já existe (ex.: veio com o usuário padrão): se ADMIN_PASSWORD foi definida,
-        # ela passa a valer, e ADMIN_USER também, se existir. Assim trocar a senha é só mudar a variável e reiniciar.
-        hash_novo = generate_password_hash(senha_env)
-        if usuario_env:
-            existe = conn.execute("SELECT id FROM admins WHERE usuario = ?", (usuario_env,)).fetchone()
-            if existe:
-                conn.execute("UPDATE admins SET senha_hash = ? WHERE id = ?", (hash_novo, existe["id"]))
-            else:  # renomeia o coordenador atual, o que também desativa o login padrão antigo
-                conn.execute(
-                    "UPDATE admins SET usuario = ?, senha_hash = ? WHERE id = (SELECT MIN(id) FROM admins)",
-                    (usuario_env, hash_novo),
-                )
-        else:
-            conn.execute(
-                "UPDATE admins SET senha_hash = ? WHERE id = (SELECT MIN(id) FROM admins)", (hash_novo,)
-            )
 
     if conn.execute("SELECT COUNT(*) FROM cerimoniarios").fetchone()[0] == 0:
         conn.executemany(
