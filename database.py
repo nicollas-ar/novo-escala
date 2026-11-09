@@ -41,6 +41,7 @@ CERIMONIARIOS_INICIAIS = [
     ("Leonardo", "leonardo.jpg"),
     ("Malu", "malu.jpg"),
     ("Vitor", "vitor.jpg"),
+    ("Richard", "ri.jpg"),
 ]
 
 SCHEMA = """
