@@ -47,12 +47,16 @@ REGRAS_SO_SE_NAO_HOUVER_OUTRA_OPCAO = [
     ("Thabata", "Nicolas"),
 ]
 
-# Bônus de chance: (quem ganha o bônus, com quem, fator).
-# Quando "com quem" é sorteado para a missa, "quem ganha" tem 20% a mais de chance
-# de também ser sorteada do que os demais.
-BONUS_COM = [
-    ("Thabata", "Nicollas Augusto", 1.2),
+# Pares que SEMPRE saem juntos: se um é sorteado, o outro entra na mesma escala.
+# (Se um dos dois não estiver marcado como disponível, o outro pode sair sozinho.)
+REGRAS_SEMPRE_JUNTOS = [
+    ("Thabata", "Nicollas Augusto"),
 ]
+
+# Bônus de chance: (quem ganha o bônus, com quem, fator).
+# Quando "com quem" é sorteado para a missa, "quem ganha" tem essa chance multiplicada
+# (ex.: 1.2 = 20% a mais). Hoje vazio, porque REGRAS_SEMPRE_JUNTOS já garante a dupla.
+BONUS_COM = []
 
 
 def _ids_por_nome(conn):
@@ -70,41 +74,86 @@ def mapa_conflitos(conn, regras=None):
     return mapa
 
 
-def _montar(ordem, n, proibido, presentes):
-    """Primeira combinação de n pessoas, na ordem do sorteio, sem nenhum par proibido
-    (inclusive em relação a quem já está presente). None se não houver nenhuma."""
+def mapa_juntos(conn):
+    """id -> id do parceiro que sempre sai junto (REGRAS_SEMPRE_JUNTOS)."""
+    ids = _ids_por_nome(conn)
+    mapa = {}
+    for a, b in REGRAS_SEMPRE_JUNTOS:
+        if a in ids and b in ids:
+            mapa[ids[a]] = ids[b]
+            mapa[ids[b]] = ids[a]
+    return mapa
+
+
+def _montar(unidades, n, proibido, presentes):
+    """Primeira combinação de exatamente n pessoas, na ordem do sorteio, formada por
+    "unidades" (1 pessoa, ou 2 que saem juntas) sem nenhum par proibido — inclusive em
+    relação a quem já está presente. None se não houver nenhuma."""
+    def livre(membros, atuais):
+        conj = set(membros)
+        return all(not (proibido.get(m, set()) & (atuais | (conj - {m}))) for m in membros)
+
     def rec(i, escolhidos, atuais):
         if len(escolhidos) == n:
             return escolhidos
-        if len(escolhidos) + len(ordem) - i < n:
+        if i >= len(unidades):
             return None
-        cid = ordem[i]
-        if not (proibido.get(cid, set()) & atuais):
-            r = rec(i + 1, escolhidos + [cid], atuais | {cid})
+        if len(escolhidos) + sum(len(u) for u in unidades[i:]) < n:
+            return None
+        u = unidades[i]
+        if len(escolhidos) + len(u) <= n and livre(u, atuais):
+            r = rec(i + 1, escolhidos + list(u), atuais | set(u))
             if r is not None:
                 return r
         return rec(i + 1, escolhidos, atuais)
     return rec(0, [], set(presentes))
 
 
-def _sortear_ponderado(candidatos, n, peso, duros, moles, presentes, rng):
+def _sortear_ponderado(candidatos, n, peso, duros, moles, juntos, presentes, rng):
     """Sorteio ponderado sem reposição (Efraimidis–Spirakis, em escala logarítmica).
-    Respeita todos os conflitos sempre que existir alguma combinação possível. Se não
-    existir, libera primeiro os conflitos "moles" e, só em último caso, os "duros":
+    Ordem de prioridade das regras, da mais forte para a mais fraca:
+      1. conflitos "duros" (nunca juntos)      2. pares "sempre juntos"
+      3. conflitos "moles" (só se não houver outra opção)
+    Se não houver combinação possível, as regras mais fracas são liberadas primeiro:
     a escala nunca sai incompleta."""
-    chaves = []
+    chaves = {}
     for cid in candidatos:
         u = 1.0 - rng.random()          # (0, 1]
-        chaves.append((math.log(u) / peso(cid), cid))
-    chaves.sort(reverse=True)
-    ordem = [cid for _, cid in chaves]
+        chaves[cid] = math.log(u) / peso(cid)
 
-    todos = {cid: duros.get(cid, set()) | moles.get(cid, set()) for cid in ordem}
-    for proibido in (todos, duros, {}):
-        r = _montar(ordem, n, proibido, presentes)
+    # cada dupla "sempre junta" entra no sorteio como uma unidade só, com chance
+    # equivalente à média da chance dos dois (assim ela não perde nem ganha vantagem)
+    chaves_dupla = {}
+    for cid in candidatos:
+        par = juntos.get(cid)
+        if par is not None and par in chaves and frozenset((cid, par)) not in chaves_dupla:
+            u = 1.0 - rng.random()
+            chaves_dupla[frozenset((cid, par))] = math.log(u) / ((peso(cid) + peso(par)) / 2)
+
+    def montar_unidades(com_pares):
+        unidades, usados = [], set()
+        for cid in candidatos:
+            if cid in usados:
+                continue
+            par = juntos.get(cid) if com_pares else None
+            if par is not None and par in chaves and par not in usados:
+                usados.update((cid, par))
+                unidades.append((chaves_dupla[frozenset((cid, par))], (cid, par)))
+            else:
+                usados.add(cid)
+                unidades.append((chaves[cid], (cid,)))
+        unidades.sort(key=lambda x: x[0], reverse=True)
+        return [u for _, u in unidades]
+
+    todos = {cid: duros.get(cid, set()) | moles.get(cid, set()) for cid in candidatos}
+    pares, soltos = montar_unidades(True), montar_unidades(False)
+    for unidades, proibido in ((pares, todos), (pares, duros),
+                               (soltos, todos), (soltos, duros),
+                               (pares, {}), (soltos, {})):
+        r = _montar(unidades, n, proibido, presentes)
         if r is not None:
             return r
-    return ordem[:n]
+    return [m for u in soltos for m in u][:n]
 
 
 def sortear_pessoas(conn, missa_id, candidatos, n, hoje, rng=random, fixos=()):
@@ -123,7 +172,25 @@ def sortear_pessoas(conn, missa_id, candidatos, n, hoje, rng=random, fixos=()):
 
     duros = mapa_conflitos(conn)
     moles = mapa_conflitos(conn, REGRAS_SO_SE_NAO_HOUVER_OUTRA_OPCAO)
-    escolhidos = _sortear_ponderado(candidatos, n, peso, duros, moles, fixos, rng)
+    juntos = mapa_juntos(conn)
+
+    # vaga extra numa escala que já existe: se alguém já escalado tem parceiro que
+    # "sempre sai junto", o parceiro entra primeiro (a menos que quebre um conflito duro)
+    forcados, presentes = [], set(fixos)
+    for f in list(fixos):
+        par = juntos.get(f)
+        if (par in candidatos and par not in presentes and len(forcados) < n
+                and not (duros.get(par, set()) & presentes)):
+            forcados.append(par)
+            presentes.add(par)
+    if forcados:
+        candidatos = [c for c in candidatos if c not in forcados]
+        n -= len(forcados)
+        if n == 0:
+            return forcados
+
+    escolhidos = forcados + _sortear_ponderado(candidatos, min(n, len(candidatos)), peso,
+                                              duros, moles, juntos, presentes, rng)
 
     # bônus de chance (BONUS_COM): se "com quem" saiu, refaz o resto da escala
     # mantendo "com quem" fixo e dando o fator a "quem ganha"
@@ -136,7 +203,7 @@ def sortear_pessoas(conn, missa_id, candidatos, n, hoje, rng=random, fixos=()):
             def peso_bonus(cid, q=q):
                 return peso(cid) * (fator if cid == q else 1.0)
             resto = [x for x in candidatos if x != c]
-            novos = _sortear_ponderado(resto, n - 1, peso_bonus, duros, moles,
+            novos = _sortear_ponderado(resto, n - 1, peso_bonus, duros, moles, juntos,
                                        set(fixos) | {c}, rng)
             escolhidos = [c] + novos
     return escolhidos
