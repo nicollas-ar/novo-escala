@@ -49,6 +49,7 @@
       <div class="topo-acoes">
         {% if admin %}
           <a class="btn btn-verde btn-pequeno" href="{{ url_for('nova_missa') }}">Add missa</a>
+          <a class="btn btn-ouro btn-pequeno" href="{{ url_for('novo_aviso') }}">Adicionar aviso</a>
         {% else %}
           <a class="btn btn-contorno btn-pequeno" href="{{ url_for('entrar') }}">Entrar</a>
         {% endif %}

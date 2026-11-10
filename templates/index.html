@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block classe_main %}estreito{% endblock %}
 {% block conteudo %}
+{% if avisos %}
+  <section class="lista-avisos" aria-labelledby="avisos-titulo">
+    <h2 id="avisos-titulo">Avisos da equipe</h2>
+    {% include "_avisos.html" %}
+  </section>
+{% endif %}
 {% if not missas %}
   <section class="vazio">
     <p>Nenhuma missa marcada por enquanto.</p>

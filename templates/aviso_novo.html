@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Adicionar aviso — Escala do Limão{% endblock %}
+{% block classe_main %}estreito{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Adicionar aviso</h1>
+<form method="post" class="caixa form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <p class="suave">O aviso aparece no topo da página pública da escala assim que você publicar.</p>
+  <label>Título
+    <input type="text" name="titulo" maxlength="80" required value="{{ titulo }}"
+           placeholder="Ex.: Ensaio da equipe">
+  </label>
+  <label>Mensagem
+    <textarea name="mensagem" rows="5" maxlength="600" required
+              placeholder="Ex.: Nosso próximo ensaio será no sábado, às 16h.">{{ mensagem }}</textarea>
+  </label>
+  <div class="acoes">
+    <button class="btn btn-verde" type="submit">Publicar aviso</button>
+    <a class="btn btn-contorno" href="{{ url_for('painel', _anchor='avisos') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

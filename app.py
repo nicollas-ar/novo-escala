@@ -175,6 +175,10 @@ def carregar_escalas(db, ids_missas):
     return por_missa
 
 
+def listar_avisos(db):
+    return db.execute("SELECT id, titulo, mensagem FROM avisos ORDER BY id DESC").fetchall()
+
+
 # ------------------------------------------------------------------ público
 
 @app.route("/")
@@ -186,7 +190,8 @@ def index():
         (hoje, hoje, agora_hora()),
     ).fetchall()
     escalas = carregar_escalas(db, [m["id"] for m in missas])
-    return render_template("index.html", missas=missas, escalas=escalas, hoje=hoje)
+    return render_template("index.html", missas=missas, escalas=escalas, hoje=hoje,
+                           avisos=listar_avisos(db))
 
 
 @app.route("/saude")
@@ -294,7 +299,36 @@ def painel():
     ).fetchall()
     escalas = carregar_escalas(db, [m["id"] for m in proximas + anteriores])
     return render_template("painel.html", proximas=proximas, anteriores=anteriores,
-                           escalas=escalas, hoje=hoje)
+                           escalas=escalas, hoje=hoje, avisos=listar_avisos(db))
+
+
+@app.route("/admin/avisos/novo", methods=["GET", "POST"])
+@login_obrigatorio
+def novo_aviso():
+    if request.method == "GET":
+        return render_template("aviso_novo.html", titulo="", mensagem="")
+
+    titulo = " ".join(request.form.get("titulo", "").split())
+    mensagem = request.form.get("mensagem", "").replace("\r\n", "\n").strip()
+    if not titulo or not mensagem or len(titulo) > 80 or len(mensagem) > 600:
+        flash("Informe um título de até 80 caracteres e uma mensagem de até 600 caracteres.", "erro")
+        return render_template("aviso_novo.html", titulo=titulo, mensagem=mensagem), 400
+
+    db = get_db()
+    db.execute("INSERT INTO avisos (titulo, mensagem) VALUES (?, ?)", (titulo, mensagem))
+    db.commit()
+    flash("Aviso publicado na página da escala.", "ok")
+    return redirect(url_for("painel", _anchor="avisos"))
+
+
+@app.route("/admin/avisos/<int:aviso_id>/retirar", methods=["POST"])
+@login_obrigatorio
+def retirar_aviso(aviso_id):
+    db = get_db()
+    db.execute("DELETE FROM avisos WHERE id = ?", (aviso_id,))
+    db.commit()
+    flash("Aviso retirado do site.", "ok")
+    return redirect(url_for("painel", _anchor="avisos"))
 
 
 def _ativos(db):

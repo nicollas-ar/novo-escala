@@ -34,7 +34,11 @@ a { color: var(--verde); }
 .topo { background: var(--creme); border-bottom: 4px solid var(--dourado); padding: 14px 20px 14px; text-align: center; }
 .topo-grade { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: 8px; }
 .topo-menu { justify-self: start; }
-.topo-acoes { justify-self: end; }
+.topo-acoes { justify-self: end; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 100%; min-width: 0; }
+.topo-acoes .btn { min-width: 0; }
+@media (max-width: 420px) {
+  .topo-acoes .btn { padding-inline: 8px; }
+}
 .marca { display: block; line-height: 0; }
 .marca img { width: 96px; height: 96px; border-radius: 50%; background: var(--creme); }
 .titulo-site { display: block; margin-top: 10px; color: var(--verde); font-weight: 800; font-size: 1.9rem; line-height: 1.15; text-decoration: none; }
@@ -212,6 +216,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .selo-status.ok { background: #e7f3ec; color: var(--verde-escuro); border: 1.5px solid var(--verde); }
 .selo-status.rascunho { background: var(--dourado-suave); color: #5a4300; border: 1.5px solid var(--dourado); }
 .zona-perigo + .zona-perigo { margin-top: 10px; }
+
+/* ---------- avisos gerais ---------- */
+.lista-avisos { margin-bottom: 24px; }
+.lista-avisos > h2 { color: var(--verde-escuro); margin-bottom: 8px; }
+.lista-avisos > .suave { margin: 0 0 12px; }
+.aviso-geral {
+  background: var(--creme); border: 1px solid var(--linha); border-left: 4px solid var(--dourado);
+  border-radius: 14px; padding: 14px 16px; margin: 0 0 10px; overflow-wrap: anywhere;
+}
+.aviso-geral h3 { margin: 0 0 4px; color: var(--verde-escuro); }
+.aviso-geral p { margin: 0; white-space: pre-wrap; }
+.aviso-geral form { margin-top: 12px; }
 
 /* ---------- recado da missa e página de funções ---------- */
 .recado { margin: 14px 0 0; padding: 10px 16px; background: var(--dourado-suave); border-radius: 14px; font-weight: 600; font-size: .95rem; color: #5a4300; white-space: pre-line; }

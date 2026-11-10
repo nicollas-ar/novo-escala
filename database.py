@@ -66,6 +66,11 @@ CREATE TABLE IF NOT EXISTS missas (
     publicada INTEGER NOT NULL DEFAULT 1, -- 0 = rascunho (só o coordenador vê)
     recado TEXT NOT NULL DEFAULT ''      -- aviso opcional exibido abaixo do horário
 );
+CREATE TABLE IF NOT EXISTS avisos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT NOT NULL,
+    mensagem TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS missa_disponiveis (
     missa_id INTEGER NOT NULL REFERENCES missas(id) ON DELETE CASCADE,
     cerimoniario_id INTEGER NOT NULL REFERENCES cerimoniarios(id) ON DELETE CASCADE,

@@ -1,0 +1,13 @@
+{% for aviso in avisos %}
+  <article class="aviso-geral">
+    <h3>{{ aviso.titulo }}</h3>
+    <p>{{ aviso.mensagem }}</p>
+    {% if gerenciar_avisos %}
+      <form method="post" action="{{ url_for('retirar_aviso', aviso_id=aviso.id) }}"
+            onsubmit="return confirm('Retirar este aviso da página da escala?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-contorno btn-pequeno" type="submit">Retirar aviso</button>
+      </form>
+    {% endif %}
+  </article>
+{% endfor %}

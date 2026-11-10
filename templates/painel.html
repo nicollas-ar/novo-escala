@@ -2,6 +2,16 @@
 {% block titulo %}Painel — Escala cerimoniarios do Limão{% endblock %}
 {% block classe_main %}estreito{% endblock %}
 {% block conteudo %}
+<section class="lista-avisos" id="avisos" aria-labelledby="avisos-titulo">
+  <h2 id="avisos-titulo">Avisos publicados</h2>
+  {% if avisos %}
+    <p class="suave">Estes avisos aparecem no topo da página da escala.</p>
+    {% set gerenciar_avisos = true %}
+    {% include "_avisos.html" %}
+  {% else %}
+    <p class="suave">Nenhum aviso publicado.</p>
+  {% endif %}
+</section>
 {% if not proximas %}
   <section class="vazio">
     <p>Nenhuma missa marcada por enquanto.</p>
