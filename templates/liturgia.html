@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Liturgia diária — Escala do Limão{% endblock %}
+{% block classe_main %}estreito{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Liturgia diária</h1>
+
+<section class="caixa" aria-label="Celebração do dia">
+  <p class="santo-data">
+    <time datetime="{{ dia }}">{{ dia|dia_semana }}, {{ dia|data_extensa }} de {{ dia[:4] }}</time>
+  </p>
+  {% if liturgia %}
+    <h2>{{ liturgia.celebracao }}</h2>
+    {% if liturgia.cor %}<p class="suave">Cor litúrgica: <strong>{{ liturgia.cor }}</strong></p>{% endif %}
+  {% else %}
+    <p>As referências da liturgia de hoje estão temporariamente indisponíveis aqui.</p>
+  {% endif %}
+  <a class="btn btn-verde" href="{{ fonte_oficial }}">Ler a liturgia completa na Edições CNBB</a>
+</section>
+
+{% if liturgia %}
+  <section aria-labelledby="leituras-titulo">
+    <h2 id="leituras-titulo">Leituras do dia</h2>
+    {% for secao in liturgia.secoes %}
+      <article class="caixa">
+        <h3>{{ secao.nome }}</h3>
+        <ul>
+          {% for referencia in secao.referencias %}<li>{{ referencia }}</li>{% endfor %}
+        </ul>
+      </article>
+    {% endfor %}
+    <p class="suave">Referências fornecidas pela API Liturgia Diária. Os textos completos e o refrão do salmo estão na página oficial.</p>
+  </section>
+{% endif %}
+{% endblock %}

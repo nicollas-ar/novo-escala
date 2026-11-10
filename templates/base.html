@@ -25,6 +25,7 @@
   {{ link_menu('quiz', 'Quiz') }}
   {{ link_menu('e_agora', 'E agora?') }}
   {{ link_menu('santo', 'Santo do dia') }}
+  {{ link_menu('liturgia', 'Liturgia diária') }}
   {% if admin %}
     <form method="post" action="{{ url_for('sair') }}" class="inline">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -15,6 +15,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash
 
 import database as dbm
+import liturgia_diaria
 import quiz_perguntas
 import santo_do_dia
 from sorteio import (FUNCAO_PADRAO, FUNCOES_PADRAO, atribuir_funcoes,
@@ -222,6 +223,13 @@ def santo():
         e_hoje=(dia == hoje),
         busca="https://pt.wikipedia.org/w/index.php?search=" + nome.replace(" ", "+"),
     )
+
+
+@app.route("/liturgia")
+def liturgia():
+    dia = date.fromisoformat(hoje_iso())
+    return render_template("liturgia.html", dia=dia.isoformat(), liturgia=liturgia_diaria.obter(dia),
+                           fonte_oficial=liturgia_diaria.FONTE_OFICIAL)
 
 
 @app.route("/quiz")
