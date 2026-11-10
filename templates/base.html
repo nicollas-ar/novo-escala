@@ -32,6 +32,7 @@
         <a href="{{ url_for('index') }}">Escala</a>
         <a href="{{ url_for('funcoes') }}">Funções</a>
         <a href="{{ url_for('quiz') }}">Quiz</a>
+        <a href="{{ url_for('e_agora') }}">E agora?</a>
         <a href="{{ url_for('santo') }}">Santo do dia</a>
       </nav>
     {% endif %}
@@ -42,6 +43,7 @@
         <a href="{{ url_for('funcoes') }}">Funções</a>
         <a href="{{ url_for('cerimoniarios') }}">Cerimoniários</a>
         <a href="{{ url_for('quiz') }}">Quiz</a>
+        <a href="{{ url_for('e_agora') }}">E agora?</a>
         <a href="{{ url_for('santo') }}">Santo do dia</a>
         <form method="post" action="{{ url_for('sair') }}" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

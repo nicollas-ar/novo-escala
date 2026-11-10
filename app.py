@@ -224,6 +224,11 @@ def quiz():
     return render_template("quiz.html", perguntas=quiz_perguntas.carregar())
 
 
+@app.route("/e-agora")
+def e_agora():
+    return render_template("e_agora.html")
+
+
 @app.route("/fotos/<path:nome>")
 def foto(nome):
     resp = send_from_directory(dbm.FOTOS_DIR, nome)

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block titulo %}E agora, cerimoniário? — Escala do Limão{% endblock %}
+{% block classe_main %}estreito{% endblock %}
+{% block cabeca %}
+<style>
+  #e-agora-opcoes { display: grid; gap: 8px; }
+  #e-agora-opcoes .btn { border-radius: 12px; text-align: left; }
+  #e-agora-opcoes .btn:disabled { cursor: default; }
+  #e-agora-feedback:not(:empty) { margin: 16px 0; }
+</style>
+{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">E agora, cerimoniário?</h1>
+<p>O que você faria? Escolha uma resposta para cada situação e veja a explicação na hora.</p>
+
+<section class="caixa" id="e-agora" hidden>
+  <div id="e-agora-rodada">
+    <p class="suave" id="e-agora-progresso"></p>
+    <h2 id="e-agora-pergunta" tabindex="-1"></h2>
+    <div id="e-agora-opcoes" role="group" aria-labelledby="e-agora-pergunta"></div>
+    <div id="e-agora-feedback" role="status"></div>
+    <div id="e-agora-continuar" hidden>
+      <button class="btn btn-verde" type="button" id="e-agora-proxima">Próxima situação</button>
+    </div>
+  </div>
+  <div id="e-agora-resultado" hidden>
+    <h2 id="e-agora-pontuacao" tabindex="-1"></h2>
+    <button class="btn btn-verde" type="button" id="e-agora-reiniciar">Jogar de novo</button>
+  </div>
+</section>
+<noscript><p>Ative o JavaScript no navegador para jogar.</p></noscript>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/e-agora.js') }}" defer></script>
+{% endblock %}
