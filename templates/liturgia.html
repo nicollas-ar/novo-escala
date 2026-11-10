@@ -11,15 +11,21 @@
   {% if liturgia %}
     <h2>{{ liturgia.celebracao }}</h2>
     {% if liturgia.cor %}<p class="suave">Cor litúrgica: <strong>{{ liturgia.cor }}</strong></p>{% endif %}
-  {% else %}
-    <p>As referências da liturgia de hoje estão temporariamente indisponíveis aqui.</p>
   {% endif %}
-  <a class="btn btn-verde" href="{{ fonte_oficial }}">Ler a liturgia completa na Edições CNBB</a>
+  <p>Leia os textos completos no quadro abaixo ou abra a página da Edições CNBB em outra aba.</p>
+  <a class="btn btn-contorno" href="{{ fonte_oficial }}" target="_blank" rel="noopener">Abrir página oficial</a>
+</section>
+
+<section class="liturgia-leitura" aria-labelledby="liturgia-leitura-titulo">
+  <h2 id="liturgia-leitura-titulo">Leituras completas</h2>
+  <iframe class="liturgia-quadro" src="{{ fonte_oficial }}"
+          title="Liturgia diária oficial da Edições CNBB"
+          sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer"></iframe>
 </section>
 
 {% if liturgia %}
   <section aria-labelledby="leituras-titulo">
-    <h2 id="leituras-titulo">Leituras do dia</h2>
+    <h2 id="leituras-titulo">Referências do dia</h2>
     {% for secao in liturgia.secoes %}
       <article class="caixa">
         <h3>{{ secao.nome }}</h3>
@@ -28,7 +34,7 @@
         </ul>
       </article>
     {% endfor %}
-    <p class="suave">Referências fornecidas pela API Liturgia Diária. Os textos completos e o refrão do salmo estão na página oficial.</p>
+    <p class="suave">Referências fornecidas pela API Liturgia Diária.</p>
   </section>
 {% endif %}
 {% endblock %}

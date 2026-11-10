@@ -257,3 +257,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--verde); outline:
 .santo-foto { display: block; width: 100%; max-width: 260px; max-height: 340px; object-fit: cover; border-radius: 18px; border: 3px solid var(--vinho); margin: 0 auto 16px; background: var(--dourado-suave); }
 .santo-texto p { margin: 0 0 12px; line-height: 1.6; }
 .santo-fonte { margin-top: 16px !important; font-size: .82rem; }
+
+/* ---------- leitura na fonte oficial ---------- */
+.liturgia-leitura { margin-bottom: 24px; }
+.liturgia-quadro {
+  display: block; width: 100%; height: clamp(30rem, 82vh, 60rem);
+  border: 1px solid var(--linha); border-radius: var(--raio); background: #fff;
+}
