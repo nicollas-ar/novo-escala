@@ -4,6 +4,7 @@ import os
 import re
 import secrets
 import time
+from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 from zoneinfo import ZoneInfo
@@ -384,32 +385,92 @@ def gravar_missa(db, missa_id, dados):
     )
 
 
+def datas_recorrentes(primeira, frequencia, quantidade):
+    datas = [primeira]
+    if frequencia == "semanal":
+        return [primeira + timedelta(weeks=i) for i in range(quantidade)]
+
+    # Mantém o dia original. Um mês sem esse dia é pulado.
+    mes = primeira.year * 12 + primeira.month - 1
+    while len(datas) < quantidade:
+        mes += 1
+        ano, indice = divmod(mes, 12)
+        if primeira.day <= monthrange(ano, indice + 1)[1]:
+            datas.append(date(ano, indice + 1, primeira.day))
+    return datas
+
+
+def criar_rascunho(db, dados):
+    cur = db.execute(
+        "INSERT INTO missas (nome, data, hora, quantidade, funcoes, recado, publicada) VALUES (?, ?, ?, ?, ?, ?, 0)",
+        (dados["nome"], dados["data"], dados["hora"], dados["quantidade"],
+         json.dumps(dados["funcoes"], ensure_ascii=False), dados["recado"]),
+    )
+    mid = cur.lastrowid
+    gravar_missa(db, mid, dados)
+    gravar_sorteio(db, mid, dados)
+
+
 @app.route("/admin/missas/nova", methods=["GET", "POST"])
 @login_obrigatorio
 def nova_missa():
     db = get_db()
     if request.method == "POST":
+        frequencia = request.form.get("frequencia", "")
+        repeticoes = request.form.get("repeticoes", "4")
+        # Abre a transação antes de consultar as datas para serializar envios da série.
+        if frequencia in ("semanal", "mensal"):
+            if dbm.USA_PG:
+                db.execute("SELECT pg_advisory_xact_lock(618273041)")
+            else:
+                db.execute("BEGIN IMMEDIATE")
+
         dados, erros = ler_missa(db, request.form, exigir_futuro=True)
+        datas = [dados["data"]]
+        if frequencia:
+            if frequencia not in ("semanal", "mensal"):
+                erros.append("Escolha uma frequência válida.")
+            elif not re.fullmatch(r"(?:[2-9]|1[0-2])", repeticoes):
+                erros.append("Escolha de 2 a 12 missas, incluindo a primeira.")
+            elif not erros:
+                try:
+                    primeira = date.fromisoformat(dados["data"])
+                    datas = [d.isoformat() for d in datas_recorrentes(primeira, frequencia, int(repeticoes))]
+                except (OverflowError, ValueError):
+                    erros.append("A série ultrapassa o limite do calendário.")
+                dados["disponiveis"] = list(dict.fromkeys(dados["disponiveis"]))
+                if len(dados["disponiveis"]) < dados["quantidade"]:
+                    erros.append("Marque pessoas diferentes em número suficiente para preencher as vagas.")
         if erros:
             for e in erros:
                 flash(e, "erro")
             return render_template("missa_nova.html", v=valores_form(
                 {**dados, "funcoes": [request.form.get(f"funcao_{i}", "") for i in range(1, 7)]}),
-                cerimoniarios=_ativos(db), hoje=hoje_iso()), 400
-        cur = db.execute(
-            "INSERT INTO missas (nome, data, hora, quantidade, funcoes, recado, publicada) VALUES (?, ?, ?, ?, ?, ?, 0)",
-            (dados["nome"], dados["data"], dados["hora"], dados["quantidade"],
-             json.dumps(dados["funcoes"], ensure_ascii=False), dados["recado"]),
-        )
-        mid = cur.lastrowid
-        gravar_missa(db, mid, dados)
-        gravar_sorteio(db, mid, dados)
-        db.commit()
-        flash("Escala sorteada! Ela ainda é um rascunho e não aparece no site. Ajuste as funções, se quiser, "
-              "e clique em “Publicar”. Depois de publicada, não dá mais para alterar.", "ok")
+                cerimoniarios=_ativos(db), hoje=hoje_iso(), frequencia=frequencia,
+                repeticoes=repeticoes), 400
+
+        if frequencia:
+            marcas = ",".join("?" * len(datas))
+            existentes = {r["data"] for r in db.execute(
+                f"SELECT data FROM missas WHERE LOWER(nome) = LOWER(?) AND hora = ? AND data IN ({marcas})",
+                (dados["nome"], dados["hora"], *datas),
+            )}
+            novas = [data for data in datas if data not in existentes]
+            for data in novas:
+                criar_rascunho(db, {**dados, "data": data})
+            db.commit()
+            if novas:
+                flash(f"Rascunhos criados: {len(novas)}. Revise e publique cada escala no painel.", "ok")
+            if existentes:
+                flash(f"Datas já cadastradas: {len(existentes)}. As escalas existentes foram preservadas.", "aviso")
+        else:
+            criar_rascunho(db, dados)
+            db.commit()
+            flash("Escala sorteada! Ela ainda é um rascunho e não aparece no site. Ajuste as funções, se quiser, "
+                  "e clique em “Publicar”. Depois de publicada, não dá mais para alterar.", "ok")
         return redirect(url_for("painel"))
     return render_template("missa_nova.html", v=valores_form(), cerimoniarios=_ativos(db),
-                           hoje=hoje_iso())
+                           hoje=hoje_iso(), frequencia="", repeticoes="4")
 
 
 @app.route("/admin/missas/<int:mid>/funcoes", methods=["GET", "POST"])

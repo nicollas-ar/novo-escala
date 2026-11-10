@@ -6,10 +6,42 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% set min_data = hoje %}
   {% include "_campos_missa.html" %}
+  <fieldset class="grupo">
+    <legend>Repetir missa</legend>
+    <div class="grade-campos">
+      <label>Frequência
+        <select name="frequencia">
+          <option value="">Missa única</option>
+          <option value="semanal" {% if frequencia == "semanal" %}selected{% endif %}>Toda semana</option>
+          <option value="mensal" {% if frequencia == "mensal" %}selected{% endif %}>Todo mês, no mesmo dia</option>
+        </select>
+      </label>
+      <label>Quantidade de missas na série
+        <select name="repeticoes">
+          {% for n in range(2, 13) %}
+            <option value="{{ n }}" {% if repeticoes == n|string %}selected{% endif %}>{{ n }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <p class="suave">A série começa na data informada. Cada missa usa os mesmos horários, funções e pessoas disponíveis, recebe seu próprio sorteio e fica em rascunho. A repetição mensal pula meses sem o dia escolhido.</p>
+  </fieldset>
   <div class="acoes">
     <button type="submit" class="btn btn-verde">Cadastrar e sortear escala</button>
     <a class="btn btn-contorno" href="{{ url_for('painel') }}">Cancelar</a>
   </div>
 </form>
 {% endblock %}
-{% block scripts %}{% include "_scripts_form.html" %}{% endblock %}
+{% block scripts %}
+{% include "_scripts_form.html" %}
+<script>
+  const frequencia = document.querySelector('[name="frequencia"]');
+  const repeticoes = document.querySelector('[name="repeticoes"]');
+  function atualizarRepeticoes() {
+    repeticoes.disabled = !frequencia.value;
+    repeticoes.closest('label').style.display = repeticoes.disabled ? 'none' : '';
+  }
+  frequencia.addEventListener('change', atualizarRepeticoes);
+  atualizarRepeticoes();
+</script>
+{% endblock %}

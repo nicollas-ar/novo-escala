@@ -49,6 +49,21 @@
           <button type="submit" class="btn btn-vinho btn-pequeno">Excluir</button>
         </form>
       </footer>
+      {% if m.publicada and equipe %}
+        {% set integrantes = namespace(lista=[]) %}
+        {% for e in equipe %}
+          {% set integrantes.lista = integrantes.lista + [[e.nome, e.funcao]] %}
+        {% endfor %}
+        {% set cartao = {
+          "nome": m.nome, "data": m.data, "recado": m.recado, "equipe": integrantes.lista,
+          "quando": (m.data|dia_semana) ~ ", " ~ (m.data|data_curta) ~ " às " ~ (m.hora|hora_fmt)
+        } %}
+        <div class="acoes">
+          <button type="button" class="btn btn-verde btn-pequeno"
+                  data-cartao-escala='{{ cartao|tojson }}'>Compartilhar no WhatsApp</button>
+          <span class="suave" role="status"></span>
+        </div>
+      {% endif %}
       {% if m.recado %}<p class="recado">{{ m.recado }}</p>{% endif %}
     </article>
   {% endfor %}
@@ -96,4 +111,7 @@
     <button type="submit" class="btn btn-contorno">Restaurar backup</button>
   </form>
 </section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/compartilhar-escala.js') }}" defer></script>
 {% endblock %}
