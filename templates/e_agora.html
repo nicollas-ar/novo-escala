@@ -11,7 +11,7 @@
 {% endblock %}
 {% block conteudo %}
 <h1 class="titulo-pagina">E agora, cerimoniário?</h1>
-<p>O que você faria? Escolha uma resposta para cada situação e veja a explicação na hora.</p>
+<p>O que você faria? Cada partida sorteia 10 situações. Escolha sua resposta e veja a explicação na hora.</p>
 
 <section class="caixa" id="e-agora" hidden>
   <div id="e-agora-rodada">
@@ -31,5 +31,5 @@
 <noscript><p>Ative o JavaScript no navegador para jogar.</p></noscript>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/e-agora.js') }}" defer></script>
+<script type="module" src="{{ url_for('static', filename='js/e-agora.js') }}"></script>
 {% endblock %}
