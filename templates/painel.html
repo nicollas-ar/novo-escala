@@ -2,6 +2,11 @@
 {% block titulo %}Painel — Escala cerimoniarios do Limão{% endblock %}
 {% block classe_main %}estreito{% endblock %}
 {% block conteudo %}
+<section class="caixa" style="margin-bottom:24px">
+  <h2>Histórico de sorteios</h2>
+  <p class="suave">Consulte todos os sorteios registrados a partir de agora, inclusive de missas excluídas.</p>
+  <a class="btn btn-contorno" href="{{ url_for('historico_sorteios') }}">Ver histórico de sorteios</a>
+</section>
 <section class="lista-avisos" id="avisos" aria-labelledby="avisos-titulo">
   <h2 id="avisos-titulo">Avisos publicados</h2>
   {% if avisos %}
