@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Histórico de sorteios — Scala{% endblock %}
+{% block classe_main %}estreito{% endblock %}
+{% block conteudo %}
+<section class="caixa">
+  <h1>Histórico de sorteios</h1>
+  <p class="suave">Área exclusiva do coordenador. Os resultados são preservados mesmo após a exclusão da missa.</p>
+  <a href="{{ url_for('painel') }}" class="btn btn-contorno">Voltar ao painel</a>
+</section>
+{% if historico %}
+  {% for item in historico %}
+  <section class="caixa" style="margin-top:20px">
+    <h2>{{ item.nome }}</h2>
+    <p class="suave">Missa: {{ item.data|data_curta }} às {{ item.hora|hora_fmt }}</p>
+    <p class="suave">Sorteio realizado em {{ item.criado_em[:10]|data_curta }} às {{ item.criado_em[11:16] }} por {{ item.coordenador }}</p>
+    {% if item.pessoas %}
+    <ul class="equipe">
+      {% for pessoa in item.pessoas %}
+      <li><div class="pessoa"><strong>{{ pessoa.nome }}</strong><span class="funcao">{{ pessoa.funcao }}</span></div></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="suave">Nenhum cerimoniário foi selecionado.</p>
+    {% endif %}
+  </section>
+  {% endfor %}
+{% else %}
+<section class="vazio"><p>Nenhum sorteio registrado ainda. Os próximos aparecerão aqui automaticamente.</p></section>
+{% endif %}
+{% endblock %}
