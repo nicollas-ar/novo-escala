@@ -310,6 +310,20 @@ def painel():
                            escalas=escalas, hoje=hoje, avisos=listar_avisos(db))
 
 
+@app.route("/admin/historico-sorteios")
+@login_obrigatorio
+def historico_sorteios():
+    registros = get_db().execute(
+        "SELECT * FROM historico_sorteios ORDER BY id DESC LIMIT 500"
+    ).fetchall()
+    historico = [{
+        "id": r["id"], "nome": r["nome_missa"], "data": r["data_missa"],
+        "hora": r["hora_missa"], "criado_em": r["criado_em"],
+        "coordenador": r["coordenador"], "pessoas": json.loads(r["resultado"])
+    } for r in registros]
+    return render_template("historico_sorteios.html", historico=historico)
+
+
 @app.route("/admin/avisos/novo", methods=["GET", "POST"])
 @login_obrigatorio
 def novo_aviso():
@@ -411,6 +425,23 @@ def gravar_sorteio(db, missa_id, dados):
     db.executemany(
         "INSERT INTO escala (missa_id, cerimoniario_id, funcao, ordem) VALUES (?, ?, ?, ?)",
         [(missa_id, cid, fn, i) for i, (cid, fn) in enumerate(atribuicoes)],
+    )
+    nomes = db.execute(
+        "SELECT id, nome FROM cerimoniarios WHERE id IN (" +
+        ",".join("?" for _ in atribuicoes) + ")",
+        [cid for cid, _ in atribuicoes],
+    ).fetchall() if atribuicoes else []
+    por_id = {r["id"]: r["nome"] for r in nomes}
+    registro = [{"nome": por_id.get(cid, "Cerimoniário"), "funcao": fn}
+                for cid, fn in atribuicoes]
+    db.execute(
+        """INSERT INTO historico_sorteios
+           (missa_id, nome_missa, data_missa, hora_missa, criado_em, coordenador, resultado)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (missa_id, dados["nome"], dados["data"], dados["hora"],
+         datetime.now(FUSO).isoformat(timespec="seconds"),
+         session.get("admin", "coordenador"),
+         json.dumps(registro, ensure_ascii=False)),
     )
     if len(pessoas) < dados["quantidade"]:
         flash(f"Não foi possível completar a escala: saíram {len(pessoas)} de "
